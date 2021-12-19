@@ -31,7 +31,7 @@ class _MainState extends State<Main> {
               fontWeight: FontWeight.bold,
               fontSize: 25)),
       body: GridView.count(
-          childAspectRatio: 1.15,
+          // childAspectRatio: 1.15,
           reverse: sm ? true : false,
           padding:
               EdgeInsets.symmetric(vertical: 12, horizontal: lg ? 100 : 15),
@@ -57,10 +57,10 @@ class _MainState extends State<Main> {
           color: Colors.blueAccent,
           icon: Icons.checklist_rtl_rounded,
         ),
-        // TabWidget(
-        //     title: 'Make budget',
-        //     subtitle:
-        //         'Set budget for instances, instance can be for a day, week, month or an event'),
+        TabWidget(
+            title: 'Make budget',
+            subtitle:
+                'Set budget for instances, instance can be for a day, week, month or an event'),
         TabWidget(
           icon: Icons.my_library_books_outlined,
           title: 'Make A Record',

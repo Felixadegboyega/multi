@@ -60,7 +60,7 @@ class _QuoteContainerState extends State<QuoteContainer> {
             var json = jsonDecode(snapshot.data.toString()) as List;
             List<Quote> quotes = json.map((e) => Quote.fromJson(e)).toList();
             return Container(
-              padding: const EdgeInsets.all(30),
+              padding: const EdgeInsets.all(20),
               // height: 400,
               height: (!sm && height < 600) ? height - 140 : (height / 2) - 50,
 
@@ -71,7 +71,7 @@ class _QuoteContainerState extends State<QuoteContainer> {
                     quotes[index].text,
                     style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 25,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold),
                   ),
                   Text(quotes[index].author ?? '- -',

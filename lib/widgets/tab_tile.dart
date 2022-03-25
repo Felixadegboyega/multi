@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:multi/constants.dart';
+import 'package:multi/pages/main.dart';
 
 class TabWidget extends StatefulWidget {
   const TabWidget({
     Key? key,
-    required this.page,
-    required this.addpage,
+    required this.index,
     required this.title,
     required this.subtitle,
     this.color = Colors.blueGrey,
     this.icon = Icons.list_alt,
   }) : super(key: key);
 
-  final Widget page;
-  final Widget addpage;
+  final int index;
   final Color color;
   final String title;
   final String subtitle;
@@ -43,16 +42,6 @@ class _TabWidgetState extends State<TabWidget> {
           color: Colors.white,
           size: 30,
         ),
-        trailing: IconButton(
-            iconSize: 20,
-            splashRadius: 20,
-            onPressed: () {
-              goToAddPage(context);
-            },
-            icon: const Icon(
-              Icons.add,
-              color: Colors.white,
-            )),
         minVerticalPadding: 10,
         tileColor: widget.color,
         title: Text(widget.title,
@@ -74,14 +63,8 @@ class _TabWidgetState extends State<TabWidget> {
   Future<void> tapTile(BuildContext context) {
     return Navigator.of(context)
         .push(MaterialPageRoute<void>(builder: (BuildContext context) {
-      return widget.page;
-    }));
-  }
-
-  Future<void> goToAddPage(BuildContext context) {
-    return Navigator.of(context)
-        .push(MaterialPageRoute<void>(builder: (BuildContext context) {
-      return widget.addpage;
+      // return widget.page;
+      return Main(index: widget.index);
     }));
   }
 }

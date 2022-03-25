@@ -1,37 +1,76 @@
 import 'package:flutter/material.dart';
-import 'package:multi/Functions/app_bar.dart';
+import 'package:multi/Functions/todo.dart';
+import 'package:multi/constants.dart';
+import 'package:multi/models/todo.dart';
 
-class Todos extends StatelessWidget {
-  Todos({Key? key}) : super(key: key);
+class Todos extends StatefulWidget {
+  const Todos({Key? key}) : super(key: key);
 
-  final List<Map> todos = [
-    {'name': 'Read1'},
-    {'name': 'Read2'},
-    {'name': 'Read3'}
-  ];
+  @override
+  State<Todos> createState() => _TodosState();
+}
+
+class _TodosState extends State<Todos> {
   @override
   Widget build(BuildContext context) {
-    bool lg = MediaQuery.of(context).size.width > 1010;
-    return Scaffold(
-      appBar: appBarWidget('My Todos', lg, context),
-      body: todoList(),
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+        child: FutureBuilder(
+            future: fetchTodo(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                var data = snapshot.data as List;
+                List<Todo> todos = data.map((e) => Todo.fromJSON(e)).toList();
+                if (todos.isNotEmpty) {
+                  return ListView.builder(
+                      itemCount: todos.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return buildTodoTile(index, todos, data);
+                      });
+                } else {
+                  return emptyTodoWidget();
+                }
+              } else {
+                return const Center(
+                    child: CircularProgressIndicator(color: Colors.blueGrey));
+              }
+            }),
+      ),
     );
   }
 
-  Padding todoList() {
-    return Padding(
-      padding: const EdgeInsets.all(15.0),
-      child: ListView.builder(
-          itemCount: todos.length * 2,
-          itemBuilder: (BuildContext context, int index) {
-            if (index.isOdd) {
-              return const Divider();
-            }
-            final int i = index ~/ 2;
-            return ListTile(
-              title: Text(todos[i]['name']),
-            );
-          }),
+  Widget buildTodoTile(int index, List<Todo> decodedTodos, List todos) {
+    return Container(
+      decoration: tabTileDecoration.copyWith(color: Colors.white),
+      margin: const EdgeInsets.only(bottom: 5),
+      child: ListTile(
+        leading: IconButton(
+            splashRadius: 20,
+            onPressed: () {
+              setState(() {
+                changeTodoStatus(index, todos[index]);
+              });
+            },
+            icon: decodedTodos[index].done
+                ? const Icon(Icons.check_box_outlined, color: Colors.blueGrey)
+                : const Icon(Icons.check_box_outline_blank_outlined)),
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          // IconButton(
+          //     onPressed: () {},
+          //     splashRadius: 20,
+          //     icon: Icon(Icons.edit, color: Colors.blue[300])),
+          IconButton(
+              onPressed: () {
+                setState(() {
+                  deleteTodo([index]);
+                });
+              },
+              splashRadius: 20,
+              icon: Icon(Icons.delete_outline_rounded, color: Colors.red[800])),
+        ]),
+        title: Text(decodedTodos[index].title),
+      ),
     );
   }
 

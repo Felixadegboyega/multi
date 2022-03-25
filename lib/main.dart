@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:multi/pages/index.dart';
+import 'package:multi/pages/pre.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -14,7 +15,7 @@ class MyApp extends StatelessWidget {
       title: 'Multi',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.blueGrey,
       ),
       home: const Home(),
     );

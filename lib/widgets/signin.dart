@@ -97,7 +97,6 @@ class _SignInState extends State<SignIn> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString('UID', userCredential.user?.uid ?? '');
       passwordController.clear();
-      print('done');
       // widget.onCompleted();
     } on FirebaseAuthException catch (e) {
       // print('done');

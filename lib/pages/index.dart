@@ -1,60 +1,69 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:multi/pages/main.dart';
+import 'package:multi/Functions/app_bar.dart';
+import 'package:multi/widgets/quote_container.dart';
+import 'package:multi/widgets/tab_tile.dart';
 
-class Home extends StatefulWidget {
-  const Home({Key? key}) : super(key: key);
+class Lobby extends StatefulWidget {
+  const Lobby({Key? key}) : super(key: key);
 
   @override
-  State<Home> createState() => _HomeState();
+  State<Lobby> createState() => _LobbyState();
 }
 
-class _HomeState extends State<Home> {
-  bool loaded = false;
-  @override
-  void initState() {
-    Timer.periodic(const Duration(seconds: 2), (timer) {
-      setState(() {
-        loaded = true;
-      });
-      timer.cancel();
-    });
-    super.initState();
-  }
-
+class _LobbyState extends State<Lobby> {
+  late bool sm;
+  late bool lg;
   @override
   Widget build(BuildContext context) {
-    return loaded
-        ? const Main()
-        : Scaffold(
-            body: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                bool sm = constraints.maxWidth < 600;
-                return Container(
-                  color: Colors.blueGrey.shade600,
-                  // height: double.infinity,
-                  width: double.infinity,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Multi',
-                        style: TextStyle(
-                            fontSize: sm ? 30 : 60, color: Colors.white),
-                      ),
-                      SizedBox(
-                        width: sm ? 70 : 130,
-                        child: const LinearProgressIndicator(
-                            backgroundColor: Colors.white,
-                            color: Colors.grey,
-                            minHeight: 6),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          );
+    double width = MediaQuery.of(context).size.width;
+
+    sm = width < 600;
+    lg = width > 1010;
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: appBarWidget('Multi', lg, context),
+      body: ListView(
+          padding:
+              EdgeInsets.symmetric(vertical: 12, horizontal: lg ? 100 : 15),
+          children: [
+            Flex(
+                direction: sm ? Axis.vertical : Axis.horizontal,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const QuoteContainer(),
+                  sm
+                      ? tabColumn()
+                      : Expanded(
+                          flex: 5,
+                          child: tabColumn(),
+                        ),
+                ])
+          ]),
+    );
+  }
+
+  Widget tabColumn() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment:
+          sm ? CrossAxisAlignment.center : CrossAxisAlignment.end,
+      children: const [
+        TabWidget(
+          index: 0,
+          title: 'Todo',
+          subtitle: 'Add, check, update and set time for your todos',
+          color: Colors.blueAccent,
+          icon: Icons.checklist_rtl_rounded,
+        ),
+        TabWidget(
+          index: 1,
+          icon: Icons.my_library_books_outlined,
+          title: 'Make A Record',
+          subtitle:
+              'Make a record of what you did and check history of added records',
+          color: Colors.purple,
+        ),
+      ],
+    );
   }
 }

@@ -1,74 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:multi/widgets/quoteContainer.dart';
-import 'package:multi/widgets/tabTile.dart';
+import 'package:multi/Functions/app_bar.dart';
+import 'package:multi/pages/record/index.dart';
+import 'package:multi/pages/todo/index.dart';
 
 class Main extends StatefulWidget {
-  const Main({Key? key}) : super(key: key);
-
+  Main({Key? key, required this.index}) : super(key: key);
+  late int index;
   @override
-  State<Main> createState() => _MainState();
+  _MainState createState() => _MainState();
 }
 
 class _MainState extends State<Main> {
-  late bool sm;
-  late bool lg;
-  @override
-  Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
+  static final List<Widget> _widgetOptions = <Widget>[
+    TodoIndex(),
+    RecordIndex(),
+  ];
 
-    sm = width < 600;
-    lg = width > 1010;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-          titleSpacing: lg ? 100 : null,
-          elevation: 0,
-          title: const Text('Multi'),
-          backgroundColor: Colors.white,
-          titleTextStyle: TextStyle(
-              color: Colors.blueGrey.shade600,
-              fontWeight: FontWeight.bold,
-              fontSize: 25)),
-      body: GridView.count(
-          // childAspectRatio: 1.15,
-          reverse: sm ? true : false,
-          padding:
-              EdgeInsets.symmetric(vertical: 12, horizontal: lg ? 100 : 15),
-          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisCount: sm ? 1 : 2,
-          // primary: false,
-          children: [
-            tabColumn(),
-            quoteContainer(),
-          ]),
-    );
+  void _onItemTapped(int index) {
+    setState(() {
+      widget.index = index;
+    });
   }
 
-  Widget tabColumn() {
-    return Column(
-      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment:
-          sm ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-      children: const [
-        TabWidget(
-          title: 'Todo',
-          subtitle: 'Add, check, update and set time for your todos',
-          color: Colors.blueAccent,
-          icon: Icons.checklist_rtl_rounded,
-        ),
-        TabWidget(
-            title: 'Make budget',
-            subtitle:
-                'Set budget for instances, instance can be for a day, week, month or an event'),
-        TabWidget(
-          icon: Icons.my_library_books_outlined,
-          title: 'Make A Record',
-          subtitle:
-              'Make a record of what you did and check history of added records',
-          color: Colors.purple,
-        ),
-      ],
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: appBarWidget('Multi', false, context),
+      body: _widgetOptions.elementAt(widget.index),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.checklist_rtl_rounded),
+            label: 'Todo',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.my_library_books_outlined),
+            label: 'Record',
+          ),
+        ],
+        currentIndex: widget.index,
+        selectedItemColor: Colors.blueGrey,
+        onTap: _onItemTapped,
+      ),
     );
   }
 }

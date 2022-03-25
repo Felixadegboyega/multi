@@ -1,18 +1,20 @@
 class Todo {
-  String name;
+  String title;
   String timeAdded;
   bool done;
   String deadline;
+  bool backedup = false;
+  String email = "";
 
   Todo(
-      {required this.name,
+      {required this.title,
       required this.deadline,
       required this.timeAdded,
-      required this.done});
+      this.done = false});
 
   factory Todo.fromJSON(Map<String, dynamic> json) {
     return Todo(
-        name: json['name'],
+        title: json['title'],
         deadline: json['deadline'],
         timeAdded: json['timeAdded'],
         done: json['done']);

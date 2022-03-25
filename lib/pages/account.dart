@@ -1,51 +1,49 @@
-import 'dart:math';
-
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:multi/Functions/app_bar.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:multi/Functions/backup.dart';
 import 'package:multi/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Account extends StatefulWidget {
-  Account({Key? key}) : super(key: key);
+  const Account({Key? key}) : super(key: key);
 
   @override
   State<Account> createState() => _AccountState();
 }
 
 class _AccountState extends State<Account> {
-  final Future<FirebaseApp> _fbApp = Firebase.initializeApp(
-      // options: const FirebaseOptions(
-      //     apiKey: "AIzaSyD2Nchj6ZSafCTfClnYFx2x3I5LKmJpqxk",
-      //     appId: "1:390937159710:android:ba0ee2d0c3d52a20b1a60f",
-      //     messagingSenderId:
-      //         "390937159710-6fe7n1p781sron9b5re9j8qetc6cqb3k.apps.googleusercontent.com",
-      //     projectId: "practise-5e196",
-      //     databaseURL: "https://practise-5e196-default-rtdb.firebaseio.com/")
-      );
+  // final Future<FirebaseApp> _fbApp = Firebase.initializeApp(options: dbOptions);
+  final Future<FirebaseApp> _fbApp = Firebase.initializeApp();
 
   var emailController = TextEditingController();
   var passwordController = TextEditingController();
   String? response;
   bool signingUp = false;
-  int authPage = 1;
+  int authPage = 2;
+  bool backingup = false;
+  String? backupMessage;
 
   @override
   Widget build(BuildContext context) {
     bool lg = MediaQuery.of(context).size.width > 1010;
     return Scaffold(
-      appBar: appBarWidget('Account', lg, context),
+      appBar: appBarWidget('Account', lg, context, showAccount: false),
       body: FutureBuilder(
           future: _fbApp,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
-              print(snapshot.error.toString());
-              return const Center(child: Text('Something went wrong'));
+              return Center(
+                child: Column(
+                  children: const [
+                    Text('Something went wrong'),
+                  ],
+                ),
+              );
             } else if (snapshot.hasData) {
               var user = getUser();
-              if (user != null) {
+              if (user != null && !backingup) {
                 return Center(
                     child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -55,14 +53,19 @@ class _AccountState extends State<Account> {
                       color: Colors.blueGrey,
                       size: 100,
                     ),
-                    Text('You are signed in as ${user.email}'),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Text('You are signed in as ${user.email}'),
+                    ),
                     TextButton(
                         style: ButtonStyle(
                             minimumSize: MaterialStateProperty.resolveWith(
-                                (states) => Size(120, 40)),
+                                (states) => const Size(120, 40)),
                             side: MaterialStateBorderSide.resolveWith(
-                                (states) => BorderSide(width: 1))),
-                        onPressed: () {},
+                                (states) => const BorderSide(width: 1))),
+                        onPressed: () {
+                          backup();
+                        },
                         child: const Text(
                           'Backup Now',
                           style: TextStyle(color: Colors.blueGrey),
@@ -70,36 +73,44 @@ class _AccountState extends State<Account> {
                     TextButton(
                         style: ButtonStyle(
                             minimumSize: MaterialStateProperty.resolveWith(
-                                (states) => Size(120, 40)),
+                                (states) => const Size(120, 40)),
                             side: MaterialStateBorderSide.resolveWith(
                                 (states) => BorderSide(
                                     width: 1, color: Colors.red.shade700))),
-                        onPressed: () {},
+                        onPressed: () {
+                          setState(() {
+                            FirebaseAuth.instance.signOut();
+                          });
+                        },
                         child: const Text(
                           'Log out',
                           style: TextStyle(color: Colors.blueGrey),
                         ))
                   ],
                 ));
+              } else if (backingup) {
+                return Center(
+                  child: Column(
+                    // mainAxisAlignment: ,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: LinearProgressIndicator(),
+                      ),
+                      Text(backupMessage ?? "")
+                    ],
+                  ),
+                );
               } else {
-                return FutureBuilder(
-                    future: getAccountInStorage(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        authPage = 2;
-                        if (authPage == 1) {
-                          return buildSignUp();
-                        } else {
-                          return buildSignIn();
-                        }
-                      } else {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.blueGrey,
-                          ),
-                        );
-                      }
-                    });
+                if (authPage == 1) {
+                  return ListView(
+                    children: [buildSignUp()],
+                  );
+                } else {
+                  return ListView(
+                    children: [buildSignIn()],
+                  );
+                }
               }
             } else {
               return const Center(
@@ -109,9 +120,22 @@ class _AccountState extends State<Account> {
     );
   }
 
-  getAccountInStorage() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('UID');
+  void backup() async {
+    setState(() {
+      backingup = true;
+    });
+    try {
+      User user = getUser();
+      await backupTodos(user.email);
+      await backupRecords(user.email);
+      ScaffoldMessenger.of(context).showSnackBar(kSnackBar('Backup Complete!'));
+    } catch (e) {
+      print("backup catch $e");
+    }
+
+    setState(() {
+      backingup = false;
+    });
   }
 
   Center buildSignIn() {
@@ -162,15 +186,31 @@ class _AccountState extends State<Account> {
                 decoration: kInputDecoration('Password'),
               ),
             ),
-            textButton('Sign In',
-                login(emailController.text, passwordController.text)),
+            TextButton(
+                onPressed: () {
+                  login(emailController.text, passwordController.text);
+                },
+                child: signingUp
+                    ? const CircularProgressIndicator(
+                        color: Colors.white,
+                      )
+                    : const Text(
+                        "Login",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                style: kButtonStyle.copyWith(
+                    padding: MaterialStateProperty.resolveWith((states) =>
+                        signingUp
+                            ? const EdgeInsets.symmetric(vertical: 10)
+                            : const EdgeInsets.symmetric(vertical: 20)))),
             TextButton(
                 onPressed: () {
                   setState(() {
                     authPage = 1;
                   });
                 },
-                child: Text("Don't have an account yet? Add account here"))
+                child:
+                    const Text("Don't have an account yet? Add account here"))
           ],
         ),
       ),
@@ -179,7 +219,7 @@ class _AccountState extends State<Account> {
 
   getUser() {
     var currentUser = FirebaseAuth.instance.currentUser;
-    print(currentUser);
+    print("currentUser $currentUser");
     return currentUser;
   }
 
@@ -231,15 +271,30 @@ class _AccountState extends State<Account> {
                 decoration: kInputDecoration('Password'),
               ),
             ),
-            textButton('Add',
-                createAccount(emailController.text, passwordController.text)),
+            TextButton(
+                onPressed: () {
+                  createAccount(emailController.text, passwordController.text);
+                },
+                child: signingUp
+                    ? const CircularProgressIndicator(
+                        color: Colors.white,
+                      )
+                    : const Text(
+                        "Add",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                style: kButtonStyle.copyWith(
+                    padding: MaterialStateProperty.resolveWith((states) =>
+                        signingUp
+                            ? const EdgeInsets.symmetric(vertical: 10)
+                            : const EdgeInsets.symmetric(vertical: 20)))),
             TextButton(
                 onPressed: () {
                   setState(() {
                     authPage = 2;
                   });
                 },
-                child: Text('SignIn instead'))
+                child: const Text('SignIn instead'))
           ],
         ),
       ),
@@ -263,59 +318,81 @@ class _AccountState extends State<Account> {
                 : const EdgeInsets.symmetric(vertical: 20))));
   }
 
-  createAccount(email, password) => () async {
-        setState(() {
-          signingUp = true;
-          response = null;
-        });
-        try {
-          UserCredential userCredential = await FirebaseAuth.instance
-              .createUserWithEmailAndPassword(email: email, password: password);
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          prefs.setString('UID', userCredential.user?.uid ?? '');
-        } on FirebaseAuthException catch (e) {
-          setState(() {
-            if (e.code == 'invalid-email') {
-              response = 'The email you supplied is invalid.';
-            } else if (e.code == 'email-already-in-use') {
-              response = 'The account already exists for that email.';
-            } else if (e.code == 'weak-password') {
-              response = 'The password provided is too weak.';
-            } else if (e.code == 'operation-not-allowed') {
-              response = 'Operation not allowed.';
-            }
-          });
-        } catch (e) {
-          print(e);
+  createAccount(email, password) async {
+    setState(() {
+      signingUp = true;
+      response = null;
+    });
+    try {
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString('UID', userCredential.user?.uid ?? '');
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        if (e.code == 'invalid-email') {
+          response = 'The email you supplied is invalid.';
+        } else if (e.code == 'email-already-in-use') {
+          response = 'The account already exists for that email.';
+        } else if (e.code == 'weak-password') {
+          response = 'The password provided is too weak.';
+        } else if (e.code == 'operation-not-allowed') {
+          response = 'Operation not allowed.';
         }
-        setState(() {
-          signingUp = false;
-        });
-      };
-  login(email, password) => () async {
-        setState(() {
-          signingUp = true;
-          response = null;
-        });
-        try {
-          UserCredential userCredential = await FirebaseAuth.instance
-              .signInWithEmailAndPassword(email: email, password: password);
-          print(userCredential);
-          // SharedPreferences prefs = await SharedPreferences.getInstance();
-          // prefs
-        } on FirebaseAuthException catch (e) {
+      });
+    } catch (e) {
+      print(e);
+    }
+    setState(() {
+      signingUp = false;
+    });
+  }
+
+  login(email, password) async {
+    setState(() {
+      signingUp = true;
+      response = null;
+    });
+    try {
+      await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'operation-not-allowed':
           setState(() {
-            if (e.code == 'invalid-email') {
-              response = 'The email you supplied is invalid.';
-            } else if (e.code == 'operation-not-allowed') {
-              response = 'Operation not allowed.';
-            }
+            response = 'Operation not allowed.';
           });
-        } catch (e) {
-          print(e);
-        }
-        setState(() {
-          signingUp = false;
-        });
-      };
+          break;
+        case 'invalid-email':
+          setState(() {
+            response = 'The email you supplied is invalid.';
+          });
+          break;
+        case 'user-not-found':
+          setState(() {
+            response = 'No account match this email.';
+          });
+          break;
+        case 'wrong-password':
+          setState(() {
+            response = 'Wrong Password.';
+          });
+          break;
+        case 'network-request-failed':
+          setState(() {
+            response = 'Network error.';
+          });
+          break;
+        default:
+          setState(() {
+            response = 'An error occured.';
+          });
+      }
+    } catch (e) {
+      print(e);
+    }
+    setState(() {
+      signingUp = false;
+    });
+  }
 }

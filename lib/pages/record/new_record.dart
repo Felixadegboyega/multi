@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:multi/Functions/todo.dart';
+import 'package:multi/Functions/record.dart';
 import 'package:multi/constants.dart';
 
-class NewTodo extends StatefulWidget {
-  const NewTodo({Key? key}) : super(key: key);
+class NewRecord extends StatefulWidget {
+  const NewRecord({Key? key}) : super(key: key);
   @override
-  State<NewTodo> createState() => _NewTodoState();
+  State<NewRecord> createState() => _NewRecordState();
 }
 
-class _NewTodoState extends State<NewTodo> {
+class _NewRecordState extends State<NewRecord> {
   TextEditingController titleController = TextEditingController();
+  TextEditingController noteController = TextEditingController();
   bool isAdding = false;
 
   @override
@@ -28,19 +29,27 @@ class _NewTodoState extends State<NewTodo> {
                 padding: const EdgeInsets.only(bottom: 20),
                 child: TextFormField(
                   controller: titleController,
-                  decoration: kInputDecoration('Todo Title'),
+                  decoration: kInputDecoration('Record Title'),
+                )),
+            Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: TextFormField(
+                  controller: noteController,
+                  decoration: kInputDecoration('Note'),
                 )),
             TextButton(
                 onPressed: () async {
                   setState(() {
                     isAdding = true;
                   });
-                  if (await addTodo(titleController.text)) {
+                  if (await addRecord(
+                      titleController.text, noteController.text)) {
                     ScaffoldMessenger.of(context)
-                        .showSnackBar(kSnackBar('New Todo added!'));
+                        .showSnackBar(kSnackBar('New Record added!'));
                   }
                   setState(() {
                     titleController.clear();
+                    noteController.clear();
                     isAdding = false;
                   });
                 },
